@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Chroma - Color Palette Generator</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAG1yeAHjeeAAAQP8AAP8zAFerAwAAnf8A4yfQAEzg2QD/AAQAAAD/AADu/wDWJJ4A4JNKAAAAAAAAAAAAIiIt3d3d3dAiIi3d3d3d0CIiLd3d3d3QRERJmZmZmZBEREmZmZmZkLu7tEREmZmQu7u0RESZmZC7u7EREXd3cIiIgRERd3dwiIiBERF3d3BmZmZmZszMwDMzMzMzzMzAMzMzMzPMzMCqqqqqqlVVUKqqqqqqVVVQAAAAAAAAAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAD//wAA" rel="icon" type="image/x-icon">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        :root {
+            --background-color: #121212;
+            --surface-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --primary-color: #00A67E;
+            --secondary-color: #8E44AD;
+            --border-color: #333333;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1400px;
+            text-align: center;
+        }
+
+        h1, p, .input-group {
+            animation: fadeInUp 0.8s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+        }
+
+        p { animation-delay: 0.4s; }
+        .input-group { animation-delay: 0.6s; }
+        hr { animation-delay: 0.8s; }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 0.5em;
+        }
+
+        p {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            font-weight: 300;
+            margin-bottom: 2.5em;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.7;
+        }
+        
+        hr {
+            width: 100%;
+            border: none;
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 2.5em 0;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            padding: 1rem;
+            background-color: var(--surface-color);
+            border-radius: 50px;
+            margin-bottom: 3em;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            /*max-width: 500px;*/
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1em;
+            padding: 18px 25px;
+            outline: none;
+        }
+        
+        input[type="text"]::placeholder {
+            transition: opacity 0.5s ease-in-out;
+            opacity: 1;
+        }
+
+        input[type="text"].placeholder-fade::placeholder {
+            opacity: 0;
+        }
+        
+        input[type="number"] {
+            max-width: 100px;
+            background-color: var(--background-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 25px;
+            padding: 12px;
+            text-align: center;
+            font-size: 1em;
+            outline: none;
+        }
+
+        button.generate-btn {
+            padding: 16px 35px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button.generate-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 166, 126, 0.3);
+        }
+
+        #palettes-wrapper {
+            width: 100%;
+            transition: opacity 0.4s ease;
+            min-height: 300px;
+        }
+
+        .palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 25px;
+            width: 100%;
+        }
+        
+        .loader-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+            width: 100%;
+        }
+
+        .spinner {
+            border: 6px solid var(--surface-color);
+            border-top: 6px solid var(--primary-color);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+        
+        .color-box {
+            height: 250px;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 15px;
+            box-sizing: border-box;
+            color: white;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            opacity: 0;
+            animation: popIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        .color-box:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .hex-code {
+            z-index: 2;
+            font-size: 1.2em;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px 12px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            cursor: pointer;
+            align-self: flex-start;
+        }
+        
+        .color-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 1;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes popIn {
+             from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Color Palette Generator</h1>
+        <p>Generate color palettes rendomly, or based on a theme.</p>
+
+        <div class="input-group">
+            <input type="text" id="promptInput">
+            <input type="number" id="colorCount" min="2" max="10" value="5">
+            <button class="generate-btn" onclick="triggerPaletteGeneration()">Generate</button>
+        </div>
+        
+        <div id="palettes-wrapper"></div>
+    </div>
+
+    <script>
+        const palettesWrapper = document.getElementById('palettes-wrapper');
+        const promptInput = document.getElementById('promptInput');
+        const colorCountInput = document.getElementById('colorCount');
+
+        const showGlobalLoader = () => {
+            palettesWrapper.innerHTML = `<div class="loader-container"><div class="spinner"></div></div>`;
+        };
+
+        const componentToHex = (c) => c.toString(16).padStart(2, '0');
+        const rgbToHex = (r, g, b) => `#${componentToHex(r)}${componentToHex(g)}${componentToHex(b)}`;
+        const hexToRgb = (hex) => {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+        };
+        const colorDistance = (rgb1, rgb2) => {
+            let r = rgb1.r - rgb2.r, g = rgb1.g - rgb2.g, b = rgb1.b - rgb2.b;
+            return Math.sqrt(r * r + g * g + b * b);
+        };
+
+        function createColorBox(hex, delay = 0) {
+            const colorBox = document.createElement('div');
+            colorBox.className = 'color-box';
+            colorBox.style.backgroundColor = hex;
+            colorBox.dataset.hex = hex;
+            colorBox.style.animationDelay = `${delay}s`;
+
+            const colorInput = document.createElement('input');
+            colorInput.type = 'color';
+            colorInput.className = 'color-input';
+            colorInput.value = hex;
+
+            const hexCodeSpan = document.createElement('span');
+            hexCodeSpan.className = 'hex-code';
+            hexCodeSpan.textContent = hex.toUpperCase();
+            
+            colorBox.append(hexCodeSpan, colorInput);
+            
+            colorInput.addEventListener('input', (e) => {
+                const newHex = e.target.value;
+                colorBox.style.backgroundColor = newHex;
+                hexCodeSpan.textContent = newHex.toUpperCase();
+                colorBox.dataset.hex = newHex;
+            });
+            
+            hexCodeSpan.addEventListener('click', (e) => {
+                navigator.clipboard.writeText(colorBox.dataset.hex.toUpperCase()).then(() => {
+                    hexCodeSpan.textContent = 'Copied!';
+                    setTimeout(() => { hexCodeSpan.textContent = colorBox.dataset.hex.toUpperCase(); }, 1200);
+                });
+            });
+
+            return colorBox;
+        }
+
+        function renderAllPalettes(results) {
+            console.log('Rendering results:', results);
+            palettesWrapper.style.opacity = '0';
+            
+            setTimeout(() => {
+                palettesWrapper.innerHTML = '';
+                const [textColors, imagePalettes] = results;
+
+                const hasTextColors = textColors && textColors.length > 0;
+                const hasFreqColors = imagePalettes && imagePalettes.freq.length > 0;
+                const hasDiffColors = imagePalettes && imagePalettes.diff.length > 0;
+
+                if (!hasTextColors && !hasFreqColors && !hasDiffColors) {
+                    palettesWrapper.innerHTML = `<h2>Generation failed. Please try a different prompt or try again later.</h2>`;
+                    palettesWrapper.style.opacity = '1';
+                    return;
+                }
+
+                let hasRenderedASection = false;
+
+                if (hasTextColors) {
+                    const textPaletteContainer = document.createElement('div');
+                    textPaletteContainer.className = 'palette';
+                    textColors.forEach((hex, i) => textPaletteContainer.appendChild(createColorBox(hex, i * 0.1)));
+                    palettesWrapper.appendChild(textPaletteContainer);
+                    hasRenderedASection = true;
+                }
+                
+                if (hasFreqColors) {
+                    if (hasRenderedASection) palettesWrapper.appendChild(document.createElement('hr'));
+                    const imagePaletteFreqContainer = document.createElement('div');
+                    imagePaletteFreqContainer.className = 'palette';
+                    imagePalettes.freq.forEach((hex, i) => imagePaletteFreqContainer.appendChild(createColorBox(hex, i * 0.1)));
+                    palettesWrapper.appendChild(imagePaletteFreqContainer);
+                    hasRenderedASection = true;
+                }
+
+                if (hasDiffColors) {
+                    if (hasRenderedASection) palettesWrapper.appendChild(document.createElement('hr'));
+                    const imagePaletteDiffContainer = document.createElement('div');
+                    imagePaletteDiffContainer.className = 'palette';
+                    imagePalettes.diff.forEach((hex, i) => imagePaletteDiffContainer.appendChild(createColorBox(hex, i * 0.1)));
+                    palettesWrapper.appendChild(imagePaletteDiffContainer);
+                }
+
+                palettesWrapper.style.opacity = '1';
+            }, 400);
+        }
+
+        function generateRandomPalette(colorCount) {
+            const colors = [];
+            for (let i = 0; i < colorCount; i++) {
+                const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+                colors.push(randomColor);
+            }
+            console.log(`Generated random palette:`, colors);
+            return colors;
+        }
+        
+        async function triggerPaletteGeneration() {
+            const promptText = promptInput.value.trim() || promptInput.placeholder;
+            const totalColors = parseInt(colorCountInput.value, 10);
+            
+            showGlobalLoader();
+
+            if (!promptInput.value.trim()) {
+                console.log('--- Triggering Prompt-Based (from placeholder) or Random Generation ---');
+                 setTimeout(() => {
+                    const randomResults = [
+                        generateRandomPalette(totalColors),
+                        {
+                            freq: generateRandomPalette(totalColors),
+                            diff: generateRandomPalette(totalColors)
+                        }
+                    ];
+                    renderAllPalettes(randomResults);
+                }, 500);
+            } else {
+                console.log('--- Triggering Prompt-Based Palette Generation ---');
+                console.log(`Prompt: "${promptText}", Color Count: ${totalColors}`);
+                try {
+                    const results = await Promise.all([
+                        generateTextPalette(promptText, totalColors),
+                        generateImagePalettes(promptText, totalColors)
+                    ]);
+                    renderAllPalettes(results);
+                } catch (error) {
+                    console.error('Catastrophic generation failure:', error);
+                    palettesWrapper.innerHTML = `<h2>A critical error occurred. Please try again.</h2>`;
+                }
+            }
+        }
+
+        function generateTextPalette(promptText, totalColors) {
+            return new Promise(async (resolve) => {
+                console.log('Fetching text palette...');
+                const fullPrompt = `Generate a color palette of ${totalColors} vibrant and distinct hex codes for "${promptText}". Return only the hex codes as a comma-separated list.`;
+                const encodedPrompt = encodeURIComponent(fullPrompt);
+                const apiUrl = `https://text.pollinations.ai/${encodedPrompt}`;
+                try {
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    const text = await response.text();
+                    console.log('Text API response:', text);
+                    const hexCodes = text.match(/#[0-9a-fA-F]{6}/g) || [];
+                    console.log('Extracted text hex codes:', hexCodes);
+                    resolve(hexCodes.slice(0, totalColors));
+                } catch (error) {
+                    console.error('Error fetching text palette:', error);
+                    resolve([]); 
+                }
+            });
+        }
+
+        function generateImagePalettes(promptText, totalColors) {
+            return new Promise((resolve) => {
+                console.log('Generating image and palettes...');
+                const encodedPrompt = encodeURIComponent(promptText);
+                const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}`;
+                const image = new Image();
+                image.crossOrigin = "Anonymous";
+
+                image.onload = () => {
+                    console.log('Image loaded. Processing pixels...');
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d', { willReadFrequently: true });
+                    const scale = Math.min(200 / image.width, 200 / image.height);
+                    canvas.width = image.width * scale;
+                    canvas.height = image.height * scale;
+                    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+                    const imageData = context.getImageData(0, 0, canvas.width, canvas.height).data;
+                    const colorCounts = {};
+                    for (let i = 0; i < imageData.length; i += 4) {
+                        const hex = rgbToHex(imageData[i], imageData[i + 1], imageData[i + 2]);
+                        colorCounts[hex] = (colorCounts[hex] || 0) + 1;
+                    }
+                    const sortedByFreq = Object.keys(colorCounts).sort((a, b) => colorCounts[b] - colorCounts[a]);
+                    console.log(`Found ${sortedByFreq.length} unique colors in image.`);
+
+                    const MAX_RGB_DISTANCE = Math.sqrt(255*255 * 3);
+                    const MIN_DISTANCE = 0.10 * MAX_RGB_DISTANCE;
+                    const freqPaletteRgb = [];
+                    if (sortedByFreq.length > 0) {
+                        for (const hex of sortedByFreq) {
+                            const candidateRgb = hexToRgb(hex);
+                            if (!candidateRgb) continue;
+                            let isDifferentEnough = true;
+                            for (const chosenRgb of freqPaletteRgb) {
+                                if (colorDistance(candidateRgb, chosenRgb) < MIN_DISTANCE) {
+                                    isDifferentEnough = false;
+                                    break;
+                                }
+                            }
+                            if (isDifferentEnough) freqPaletteRgb.push(candidateRgb);
+                            if (freqPaletteRgb.length >= totalColors) break;
+                        }
+                    }
+                    const freqPalette = freqPaletteRgb.map(rgb => rgbToHex(rgb.r, rgb.g, rgb.b));
+                    console.log('Frequency-based palette (filtered):', freqPalette);
+
+                    let diffPalette = [];
+                    if (sortedByFreq.length > 0) {
+                        const candidatesRgb = sortedByFreq.map(hexToRgb).filter(Boolean);
+                        if (candidatesRgb.length > 0) {
+                           diffPalette.push(rgbToHex(candidatesRgb[0].r, candidatesRgb[0].g, candidatesRgb[0].b));
+                            while (diffPalette.length < totalColors && diffPalette.length < candidatesRgb.length) {
+                                let bestCandidate = null;
+                                let maxMinDist = -1;
+                                for (const candidateRgb of candidatesRgb) {
+                                    let minDistance = Infinity;
+                                    for (const chosenHex of diffPalette) {
+                                        const dist = colorDistance(candidateRgb, hexToRgb(chosenHex));
+                                        if (dist < minDistance) minDistance = dist;
+                                    }
+                                    const candidateHex = rgbToHex(candidateRgb.r, candidateRgb.g, candidateRgb.b);
+                                    if (minDistance > maxMinDist && !diffPalette.includes(candidateHex)) {
+                                        maxMinDist = minDistance;
+                                        bestCandidate = candidateRgb;
+                                    }
+                                }
+                                if (bestCandidate) {
+                                    diffPalette.push(rgbToHex(bestCandidate.r, bestCandidate.g, bestCandidate.b));
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    const finalDiffPalette = diffPalette.slice(0, totalColors);
+                    console.log('Difference-based palette:', finalDiffPalette);
+                    resolve({ freq: freqPalette, diff: finalDiffPalette });
+                };
+                image.onerror = () => {
+                    console.error('Error loading image.');
+                    resolve({ freq: [], diff: [] });
+                };
+                image.src = imageUrl;
+            });
+        }
+
+        const themes = [
+            'Misty Forest Dawn',
+            'Cyberpunk Cityscape',
+            'Summer Festival',
+            'Melancholy Rainy Evening',
+            'Nature',
+            'Vibrant',
+            'Cozy Winter',
+            'Neon',
+            'Retro Arcade',
+            'Serene Japanese Garden',
+            'Steampunk',
+            'Haunted Mansion',
+            'Tropical Sunset Beach',
+            'Nostalgic 90s Candy',
+            'Peaceful green',
+            'Volcanic Eruption',
+            'Warm Autumn'
+        ];
+        
+        let currentThemeIndex = -1;
+        function cyclePlaceholders() {
+            let nextThemeIndex;
+            do {
+                nextThemeIndex = Math.floor(Math.random() * themes.length);
+            } while (nextThemeIndex === currentThemeIndex);
+            currentThemeIndex = nextThemeIndex;
+            
+            promptInput.classList.add('placeholder-fade');
+
+            setTimeout(() => {
+                promptInput.placeholder = themes[currentThemeIndex];
+                promptInput.classList.remove('placeholder-fade');
+            }, 500);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            cyclePlaceholders();
+            setInterval(cyclePlaceholders, 4000);
+            
+            promptInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Tab' && promptInput.value.trim() === '') {
+                    event.preventDefault();
+                    promptInput.value = promptInput.placeholder;
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
