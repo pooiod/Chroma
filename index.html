@@ -394,7 +394,7 @@
         function generateTextPalette(promptText, totalColors) {
             return new Promise(async (resolve) => {
                 console.log('Fetching text palette...');
-                const fullPrompt = `Generate a color palette of ${totalColors} vibrant and distinct hex codes for "${promptText}". Return only the hex codes as a comma-separated list.`;
+                const fullPrompt = `Generate a color palette of ${totalColors} hex codes for the prompt: "${promptText}". Return only the hex codes as a comma-separated list.`;
                 const encodedPrompt = encodeURIComponent(fullPrompt);
                 const apiUrl = `https://text.pollinations.ai/${encodedPrompt}`;
                 try {
